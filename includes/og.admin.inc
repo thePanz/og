@@ -185,6 +185,17 @@ function og_admin_settings() {
     '#description' => t('The body of the message sent to a new admin for a group. Available variables: @group, @username, !group_url, !invite_url'),
     '#default_value' => _og_mail_text('og_new_admin_body')
   );
+  
+  // Organic Groups breadcrumbs setting
+  $options = array(t('Disabled'), t('Enabled'));
+  $form['og_settings']['group_details']['og_breadcrumbs'] = array(
+    '#type' => 'radios',
+    '#title' => t('Organic Groups Breadcrumbs'), 
+    '#description' => t('Use Organic groups custom breadcrumbs.'),
+    '#default_value' => variable_get('og_breadcrumbs', 1), 
+    '#options' => $options,
+  );
+  unset($options);
 
   return system_settings_form($form);
 }

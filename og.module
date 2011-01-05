@@ -1026,10 +1026,12 @@ function og_view_group(&$node, $teaser = FALSE, $page = FALSE) {
       );
   }
   else {
-    // See http://drupal.org/files/issues/bc-fixup-204415-50.patch for an alternate way
-    $bc = og_get_breadcrumb($node);
-    array_pop($bc);
-    drupal_set_breadcrumb($bc);
+    if (variable_get('og_breadcrumbs', 1) == 1) {
+      // See http://drupal.org/files/issues/bc-fixup-204415-50.patch for an alternate way
+      $bc = og_get_breadcrumb($node);
+      array_pop($bc);
+      drupal_set_breadcrumb($bc);
+    }
 
     unset($node->content['body']);
     $node->content['og_mission'] = array(
@@ -1337,7 +1339,7 @@ function og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
     case 'view':
       $group_node = og_get_group_context();
 
-      if ($group_node && $page && !empty($node->og_groups)) {
+      if (variable_get('og_breadcrumbs', 1) == 1 &&  $group_node && $page && !empty($node->og_groups)) {
         $bc = og_get_breadcrumb($group_node);
         drupal_set_breadcrumb($bc);
       }
@@ -1504,7 +1506,7 @@ function og_form_alter(&$form, &$form_state, $form_id) {
       $form['options']['sticky']['#title'] = t('Sticky at top of group home page and other lists.');
     }
     elseif (og_is_group_post_type($node->type)) {
-      if ($group_node = og_get_group_context()) {
+      if (variable_get('og_breadcrumbs', 1) == 1 && $group_node = og_get_group_context()) {
         $bc = og_get_breadcrumb($group_node);
         if (isset($node->nid)) {
           $bc[] = l($node->title, "node/$node->nid");
