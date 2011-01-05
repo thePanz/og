@@ -1244,7 +1244,12 @@ function og_presave_group(&$node) {
 
   // Keep only the selected groups.
   if (isset($node->og_groups)) {
-    $node->og_groups = array_filter($node->og_groups);
+    if (is_array($node->og_groups)){
+      $node->og_groups = array_filter($node->og_groups);
+    }
+    else {
+      $node->og_groups = array($node->og_groups);
+    }
   }
 
   // Support devel module's bulk node generation.
@@ -1364,6 +1369,9 @@ function og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
       // Ensure that the number of groups specified as node audience do not exceed group limit
       if (isset($node->og_groups)) {
+        if (!is_array($node->og_groups)){
+          $node->og_groups = array($node->og_groups);
+        }
         $og_groups_filtered = array_filter($node->og_groups);
         $max_number = variable_get('og_max_groups_' . $node->type,'');
         if ($og_groups_filtered && $max_number) {
@@ -1893,9 +1901,10 @@ function og_form_add_og_audience(&$form, &$form_state) {
   }
 
   // Show read only item if we are non-admin, and in simple mode (i.e. non-checkboxes) and at least one group is in querystring
-  $simple = !user_access('administer organic groups') && !variable_get('og_audience_checkboxes', TRUE) && count($gids);
-
+  $simple = !user_access('administer organic groups') && !variable_get('og_audience_checkboxes', TRUE) && count($gids) == 1;
+  
   // determine value of audience multi-select
+  $groups = array();
   if (count($options) == 1 && $required) {
     $gids = array_keys($options);
     $gid = $gids[0];
@@ -1913,9 +1922,6 @@ function og_form_add_og_audience(&$form, &$form_state) {
   }
   elseif (isset($node->og_groups)) {
     $groups = $node->og_groups;
-  }
-  else {
-    $groups = array();
   }
   // This is only used by og_access module right now.
   $form['og_initial_groups'] = array(
@@ -1952,22 +1958,51 @@ function og_form_add_og_audience(&$form, &$form_state) {
     }
   }
   elseif ($cnt = count($options, COUNT_RECURSIVE)) {
-    // show multi-select. if less than 20 choices, use checkboxes.
-    $type = $cnt >= 20 || $is_optgroup ? 'select' : 'checkboxes';
+    // Set form type to select og audience; default checkboxes
+    $type = 'checkboxes';
     $max_groups = variable_get('og_max_groups_'.$node->type,'');
-    $description_max_groups = ($max_groups && !user_access('administer nodes')) ? format_plural($max_groups," Limited to !max_groups choice."," Limited to !max_groups choices.", array('!max_groups' => $max_groups)):'';
+    if ($cnt >= 20 || $is_optgroup){
+      // Set the form type: select; if more than 20 choices or options with optgroup (for admins)
+      $type = 'select';
+    }
+    else if ($max_groups == 1) {
+      // Set the form type to radios if limited to one group
+      $type = 'radios';
+    }
+    
+    // Set og audience default-value; 
+    // Single selects and radios get handled as string/int, multiple selects/checkboxes as array
+    $default_value = $groups;
+    if ($max_groups == 1) {
+      // Provide one default value for single value selction (group id is passed using
+      $default_value = current($groups);
+    }
+    
+    // Set the audience description
+    $count_options = count($options);
+    if ($is_optgroup) {
+      // For optgroup count_options is the amount of groups and COUNT_RECURSIVE the total amount of groups and options
+      $count_options = count($options, COUNT_RECURSIVE) - $count_options;
+    }
+    $description = format_plural($count_options, 'Show this post in this group.', 'Show this post in these groups.');
+    if ($max_groups && $count_options > 1) {
+      // Description for limited amount of choises
+      $description = format_plural($max_groups, 'Show this post in one of these groups.', 'Show this post in !max_groups of these groups.', array('!max_groups' => $max_groups));
+    }
+    
     $form['og_nodeapi']['visible']['og_groups'] = array(
       '#type' => $type,
       '#title' => t('Audience'),
       '#attributes' => array('class' => 'og-audience'),
-      '#options' => $type == 'checkboxes' ? array_map('filter_xss', $options) : $options,
+      '#options' => ($type == 'checkboxes' || $type == 'radios') ? array_map('filter_xss', $options) : $options,
       '#required' => $required,
-      '#description' =>  format_plural(count($options), 'Show this post in this group.', 'Show this post in these groups.') . $description_max_groups,
-      '#default_value' => $groups ? $groups : array(),
+      '#description' => $description,
+      '#default_value' => $default_value,
       '#required' => $required,
-      '#multiple' => TRUE);
+      '#multiple' => ($max_groups == 1 ? FALSE : TRUE),
+    );
   }
-  else if ($required) {
+  elseif ($required) {
     form_set_error('title', t('You must <a href="@join">join a group</a> before posting a %type.', array('@join' => url('og'), '%type' => node_get_types('name', $node->type))));
   }
 }

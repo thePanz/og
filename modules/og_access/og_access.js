@@ -3,9 +3,12 @@ Drupal.behaviors.og_access_group_post = function() {
   
   /* Node authoring form for group content -Disable the public checkbox if no groups are selected in in Audience */
     $('.og-audience').click(function() {
-      // Audience can be checkboxes, a simple select, or have optgroup (optgroups busted ATM. help wanted)
+      // Audience can be checkboxes, radios, a simple select, or have optgroup (optgroups busted ATM. help wanted)
       var cnt;
       if ( $('.og-audience .form-checkbox').size() > 0) {
+        cnt = $('input.og-audience:checked').size();  
+      }
+      else if ( $('.og-audience .form-radio').size() > 0) {
         cnt = $('input.og-audience:checked').size();  
       }
       else {
@@ -22,6 +25,12 @@ Drupal.behaviors.og_access_group_post = function() {
     // Set initial value
     if ( $('.og-audience .form-checkbox').size() > 0 ) {
       // The checkbox way of showing audience.      
+      if ( $('input.og-audience:checked').size() < 1) {
+        $('#edit-og-public').attr("disabled", "disabled");
+      }    
+    }
+    else if ( $('.og-audience .form-radio').size() > 0 ) {
+      // The radio way of showing audience.      
       if ( $('input.og-audience:checked').size() < 1) {
         $('#edit-og-public').attr("disabled", "disabled");
       }    
