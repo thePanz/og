@@ -322,10 +322,18 @@ function og_notifications_notifications($op) {
         'field' => 'group',
         'type' => 'int',
         'options callback' => 'og_notifications_user_groups',
+        'value callback' =>   'og_notifications_user_groups_callback',
         'object_type' => 'node',
       );
       return $fields;
   }
+}
+
+/**
+ * Callback for groups select (required to avoid "notifications_node_title2nid" call, see issue #863924)
+ */
+function og_notifications_user_groups_callback($value) {
+  return $value;
 }
 
 /**
