@@ -92,10 +92,10 @@ function og_notifications_form_alter(&$form, $form_state, $form_id) {
       );
       // General content settings
       $select = array();
-      $nodetypes = node_get_types();
+      $nodetypes = node_get_types('names');
       $ogtypes = og_get_types('group_post');
       foreach ($ogtypes as $ntype) {
-        $select[$ntype] = $nodetypes[$ntype]->name;
+        $select[$ntype] = $nodetypes[$ntype];
       }
 
       $form['group']['og_notifications_content_types'] = array(
@@ -322,18 +322,11 @@ function og_notifications_notifications($op) {
         'field' => 'group',
         'type' => 'int',
         'options callback' => 'og_notifications_user_groups',
-        'value callback' =>   'og_notifications_user_groups_callback',
+        'value callback' =>   'intval', // required to avoid "notifications_node_title2nid" call, see issue #863924
         'object_type' => 'node',
       );
       return $fields;
   }
-}
-
-/**
- * Callback for groups select (required to avoid "notifications_node_title2nid" call, see issue #863924)
- */
-function og_notifications_user_groups_callback($value) {
-  return $value;
 }
 
 /**
