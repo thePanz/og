@@ -352,10 +352,22 @@ function og_notifications_notifications_subscription_fields_alter(&$fields) {
  */
 function og_notifications_content_types($subscription = NULL) {
   static $types;
-  
-  if (!isset($types)) {
-    $content_types = array_filter(variable_get('og_notifications_content_types', array()));
-    $types = array_intersect_key(notifications_content_type_name(), $content_types);
+
+  if (empty($types)) {
+    // Get the translated content types names
+    $names = notifications_content_type_name();
+
+    // Retrieve all available group content types
+    $og_types = og_get_types('group_post');
+    
+    // For each group-content type keep only the subscribeable ones
+    foreach($og_types as $og_type) {
+      $enabled = notifications_content_type_enabled($og_type);
+      // Keep only subscribeable group content types
+      if (!empty($enabled) && in_array('grouptype', $enabled)) {
+        $types[$og_type] = $names[$og_type];
+      }
+    }
   }
   
   return $types;
