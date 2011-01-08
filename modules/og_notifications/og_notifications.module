@@ -452,10 +452,13 @@ function og_notifications_notifications_event_get_template($event) {
  *   An array of the users organic groups.
  */
 function og_notifications_user_groups($subscription) {
-  $uid = $subscription->uid;
-  $result = db_query("SELECT n.nid, n.title FROM {og_uid} ogu INNER JOIN {node} n USING (nid) WHERE ogu.uid = %d", $uid);
-  while ($group = db_fetch_object($result)) {
-    $options[$group->nid] = $group->title;
+  $options = array();
+  
+  $user = user_load($subscription->uid);
+  if (!empty($user->og_groups)) {
+    foreach($user->og_groups as $gid => $group) {
+      $options[$gid] = $group['title'];
+    }
   }
 
   return $options;
