@@ -386,7 +386,6 @@ function og_notifications_group_content_types($all = TRUE) {
 
     // Retrieve all available group content types
     $og_types = og_get_types('group_post');
-    // dpm($og_types);
     
     // For each group-content type keep only the subscribeable ones??
     foreach($og_types as $og_type) {
@@ -449,18 +448,10 @@ function og_notifications_notifications_subscription($op, $subscription = NULL, 
         if (is_null($account)) {
           $account = user_load($subscription->uid);
         }
-        // dpm(__function__ . '() ' . $op);
-        // dpm($subscription);
-        // dpm($account);
-        // dpm($subscription->get_conditions());
-        // Complete GROUP-Subscription with all group-content type subscriptions
         $conditions = $subscription->get_conditions();
-        og_notifications_user_subscribe($conditions['group'], $account);
-        //$group_types = og_notifications_group_content_types();
-        //foreach ($group_types as $type => $name) {
-        //  dpm($type);
-        // }
         
+        // Subscribe the user to the GROUP content (with the activated grouptypes)
+        og_notifications_user_subscribe($conditions['group'], $account);
       }
     break;
     
@@ -631,7 +622,7 @@ function og_notifications_user_subscribe($gid, $account) {
   $subscription_default->add_condition('group', $gid);
 
   // Only subscribe the user to enabled types.
-  dpm('filter based on real ALL-GROUP subscription');
+  // dpm('filter based on real ALL-GROUP subscription');
   
   // Subscribe the user to "enabled" grouptypes contents
   $og_types = og_notifications_group_content_types(FALSE);
@@ -657,7 +648,7 @@ function og_notifications_user_subscribe($gid, $account) {
  *   The node ID of the group being subscribed to.
  */
 function og_notifications_user_unsubscribe($gid, $account) {
-  dpm(__function__);
+  // dpm(__function__);
   notifications_delete_subscriptions(array('uid' => $account->uid, 'type' => 'grouptype'), array('group' => $gid));
 }
 
