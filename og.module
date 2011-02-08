@@ -1906,11 +1906,15 @@ function og_form_add_og_audience(&$form, &$form_state) {
   $simple = !user_access('administer organic groups') && !variable_get('og_audience_checkboxes', TRUE) && count($gids) == 1;
   
   // determine value of audience multi-select
-  $groups = array();
-  if (count($options) == 1 && $required) {
-    $gids = array_keys($options);
-    $gid = $gids[0];
-    $groups = array($gid);
+  
+  // Fill the groups available for the current user
+  $groups = array_keys($options);
+
+  // Filter out displayed groups for node adding
+  if (count($groups) == 1 && $required) {
+    // $gids = array_keys($options);
+    // $gid = $gids[0];
+    // $groups = array($groups[0]);
     // also show read only mode if user has 1 option and we are in required mode
     $simple = TRUE;
   }
@@ -1967,7 +1971,7 @@ function og_form_add_og_audience(&$form, &$form_state) {
       // Set the form type: select; if more than 20 choices or options with optgroup (for admins)
       $type = 'select';
     }
-    else if ($max_groups == 1) {
+    elseif ($max_groups == 1) {
       // Set the form type to radios if limited to one group
       $type = 'radios';
     }
@@ -1976,7 +1980,8 @@ function og_form_add_og_audience(&$form, &$form_state) {
     // Single selects and radios get handled as string/int, multiple selects/checkboxes as array
     $default_value = $groups;
     if ($max_groups == 1) {
-      // Provide one default value for single value selction (group id is passed using
+      // @TODO: fix for one-group, not-required selection (now is wrongly displayed as a RADIO)
+      // Provide one default value for single value selction (group id is passed using node creation)
       $default_value = current($groups);
     }
     
