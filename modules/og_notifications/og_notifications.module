@@ -216,7 +216,6 @@ function og_notifications_og($op, $gid, $uid, $args) {
  * Implementation of hook_notifications_templates()
  */
 function og_notifications_notifications_templates($op, $type = 'all', $language = NULL) {
-  dpm(__function__ . '() ' . $op);
   switch ($op) {
     case 'help':
       if (strpos($type, 'og-notifications') === 0) {
@@ -413,14 +412,13 @@ function og_notifications_group_content_types($all = TRUE) {
   }
 }
 
-
 /**
  * Returns the Group Node subscription setting
  */
 function og_notifications_group_nodes_enabled($group_node = NULL) {
   // dpm(notifications_subscription_type_enabled());
   if (variable_get('og_notifications_per_group_node', 0) == 1) {
-    // @TODO: Merge per-group-node setting
+    // @TODO: Merge per-group node setting
   }
   else {
     return TRUE;
@@ -432,7 +430,6 @@ function og_notifications_group_nodes_enabled($group_node = NULL) {
 function og_notifications_notifications_subscription($op, $subscription = NULL, $account = NULL) {
   switch ($op) {
     case 'access':
-    // dpm(__function__ . '() ' . $op);
       // Check access control for subscription
       if (($conditions = $subscription->get_conditions()) && !empty($conditions['group']) && is_numeric($conditions['group'])) {
         if (($group = node_load($conditions['group'])) && og_is_group_type($group->type) && notifications_content_node_allow($account, $group)) {
@@ -450,8 +447,14 @@ function og_notifications_notifications_subscription($op, $subscription = NULL, 
         }
         $conditions = $subscription->get_conditions();
         
+        dpm($subscription);
+        $options = array(
+          'send_method' => $subscription->send_method,
+          'send_interval' => $subscription->send_interval,
+        );
+        dpm($options);
         // Subscribe the user to the GROUP content (with the activated grouptypes)
-        og_notifications_user_subscribe($conditions['group'], $account);
+        og_notifications_user_subscribe($conditions['group'], $account, $options);
       }
     break;
     
@@ -460,10 +463,9 @@ function og_notifications_notifications_subscription($op, $subscription = NULL, 
         if (is_null($account)) {
           $account = user_load($subscription->uid);
         }
-
-      // Unsubscribe the user from the given "GROUP" subscription (and related grouptype)
-      $conditions = $subscription->get_conditions();
-      og_notifications_user_unsubscribe($conditions['group'], $account);
+        // Unsubscribe the user from the given "group" subscription (and related grouptype)
+        $conditions = $subscription->get_conditions();
+        og_notifications_user_unsubscribe($conditions['group'], $account);
       }
       break;
   }
@@ -611,8 +613,7 @@ function og_notifications_user_autosubscribe_set($uid, $autosubscribe) {
  * @param Integer $gid
  *   The node ID of the group being subscribed to.
  */
-function og_notifications_user_subscribe($gid, $account) {
-  // dpm(__function__);
+function og_notifications_user_subscribe($gid, $account, $options = array()) {
   // Remove all existing user->group subscriptions.
   // og_notifications_user_unsubscribe($account, $gid);
 
@@ -620,9 +621,14 @@ function og_notifications_user_subscribe($gid, $account) {
   $subscription_default = notifications_build_subscription('grouptype');
   $subscription_default->set_account($account);
   $subscription_default->add_condition('group', $gid);
-
-  // Only subscribe the user to enabled types.
-  // dpm('filter based on real ALL-GROUP subscription');
+  
+  // Using settings provided for the user subscription
+  if (isset($options['send_interval'])) {
+    $subscription_default->send_interval = $options['send_interval'];
+  }
+  if (isset($options['send_method'])) {
+    $subscription_default->send_method = $options['send_method'];
+  }
   
   // Subscribe the user to "enabled" grouptypes contents
   $og_types = og_notifications_group_content_types(FALSE);
@@ -648,7 +654,6 @@ function og_notifications_user_subscribe($gid, $account) {
  *   The node ID of the group being subscribed to.
  */
 function og_notifications_user_unsubscribe($gid, $account) {
-  // dpm(__function__);
   notifications_delete_subscriptions(array('uid' => $account->uid, 'type' => 'grouptype'), array('group' => $gid));
 }
 
